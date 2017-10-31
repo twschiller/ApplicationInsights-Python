@@ -136,6 +136,9 @@ class ApplicationInsightsMiddleware(object):
 
     # Pre-1.10 handler
     def process_response(self, request, response):
+        if not hasattr(request, "appinsights"):
+            return response
+
         addon = request.appinsights
         duration = addon.measure_duration()
 
