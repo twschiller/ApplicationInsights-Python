@@ -126,6 +126,9 @@ class ApplicationInsightsMiddleware(object):
         context.location.ip = request.META.get('REMOTE_ADDR', '')
         context.user.user_agent = request.META.get('HTTP_USER_AGENT', '')
 
+        if self._settings.application_settings.ver:
+            context.application.ver = self._settings.application_settings.ver
+
         # User
         if request.user is not None and not request.user.is_anonymous and request.user.is_authenticated:
             context.user.auth_user_id = request.user.get_username()

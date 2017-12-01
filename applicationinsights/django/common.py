@@ -8,12 +8,16 @@ ApplicationInsightsSettings = collections.namedtuple("ApplicationInsightsSetting
     "channel_settings",
     "use_view_name",
     "record_view_arguments",
-    "log_exceptions"])
+    "log_exceptions",
+    "application_settings"])
 
 ApplicationInsightsChannelSettings = collections.namedtuple("ApplicationInsightsChannelSettings", [
     "send_interval",
     "send_time",
     "endpoint"])
+
+ApplicationInsightsApplicationSettings = collections.namedtuple("ApplicationInsightsApplicationSettings", [
+    "ver"])
 
 def load_settings():
     if hasattr(settings, "APPLICATION_INSIGHTS"):
@@ -34,7 +38,9 @@ def load_settings():
         channel_settings=ApplicationInsightsChannelSettings(
             endpoint=config.get("endpoint"),
             send_interval=config.get("send_interval"),
-            send_time=config.get("send_time")))
+            send_time=config.get("send_time")),
+        application_settings=ApplicationInsightsApplicationSettings(
+            ver=config.get("ver")))
 
 saved_clients = {}
 saved_channels = {}
