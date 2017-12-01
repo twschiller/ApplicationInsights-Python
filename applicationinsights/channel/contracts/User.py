@@ -76,7 +76,7 @@ class User(object):
             return self._values['ai.user.authUserId']
         return self._defaults['ai.user.authUserId']
 
-    @account_id.setter
+    @auth_user_id.setter
     def auth_user_id(self, value):
         """The auth_user_id property.
 
