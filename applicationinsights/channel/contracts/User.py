@@ -64,6 +64,29 @@ class User(object):
             del self._values['ai.user.accountId']
         else:
             self._values['ai.user.accountId'] = value
+
+    @property
+    def auth_user_id(self):
+        """The auth_user_id property.
+
+        Returns:
+            (string). the property value. (defaults to: None)
+        """
+        if 'ai.user.accountId' in self._values:
+            return self._values['ai.user.authUserId']
+        return self._defaults['ai.user.authUserId']
+
+    @account_id.setter
+    def auth_user_id(self, value):
+        """The auth_user_id property.
+
+        Args:
+            value (string). the property value.
+        """
+        if value == self._defaults['ai.user.authUserId'] and 'ai.user.authUserId' in self._values:
+            del self._values['ai.user.authUserId']
+        else:
+            self._values['ai.user.authUserId'] = value
         
     @property
     def user_agent(self):
