@@ -8,8 +8,9 @@ class User(object):
     _defaults = collections.OrderedDict([
         ('ai.user.accountAcquisitionDate', None),
         ('ai.user.accountId', None),
+        ('ai.user.authUserId', None)
         ('ai.user.userAgent', None),
-        ('ai.user.id', None)
+        ('ai.user.id', None),
     ])
     
     def __init__(self):
