@@ -9,6 +9,7 @@ from django.http import Http404
 
 import applicationinsights
 from applicationinsights.channel import contracts
+from applicationinsights.channel.contracts.Utils import ms_to_duration
 from . import common
 
 # Pick a function to measure time; starting with 3.3, time.monotonic is available.
@@ -247,18 +248,7 @@ class RequestAddon(object):
         end_time = TIME_FUNC()
         return ms_to_duration(int((end_time - self._process_start_time) * 1000))
 
-def ms_to_duration(n):
-    duration_parts = []
-    for multiplier in [1000, 60, 60, 24]:
-        duration_parts.append(n % multiplier)
-        n //= multiplier
 
-    duration_parts.reverse()
-    duration = "%02d:%02d:%02d.%03d" % tuple(duration_parts)
-    if n:
-        duration = "%d.%s" % (n, duration)
-
-    return duration
 
 def arg_to_str_3(arg):
     if isinstance(arg, str):

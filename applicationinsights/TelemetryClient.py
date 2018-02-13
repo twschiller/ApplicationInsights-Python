@@ -3,8 +3,10 @@ import traceback
 import sys
 import uuid
 from applicationinsights import channel
+from applicationinsights.channel.contracts.Utils import ms_to_duration
 
 NULL_CONSTANT_STRING = 'Null'
+
 
 class TelemetryClient(object):
     """The telemetry client used for sending all types of telemetry. It serves as the main entry point for
@@ -185,6 +187,41 @@ class TelemetryClient(object):
 
         self._channel.write(data, self._context)
 
+    def track_dependency(self, name, command, type=None, duration=None, target=None, success=None, result_code=None, properties=None, measurements=None):
+        """Sends information about a single dependency.
+
+        Dependency ID will be a random UUID4. For dependency tracking to work properly, the operation_Id and
+        operation_parentId should be set in the telemetry context (cf. https://docs.microsoft.com/en-us/azure/application-insights/application-insights-correlation)
+
+        :param name: Name of the command initiated with this dependency call. Low cardinality value. Examples are stored procedure name and URL path template.
+        :param command: Command initiated by this dependency call. Examples are SQL statement and HTTP URL with all query parameters.
+        :param type: Dependency type name. Low cardinality value for logical grouping of dependencies and interpretation of other fields like commandName and resultCode. Examples are SQL, Azure table, and HTTP.
+        :param duration: Request duration in ms
+        :param success: Indication of successful or unsuccessful call.
+        :param result_code: Result code of a dependency call. Examples are SQL error code and HTTP status code.
+        :param properties: the set of custom properties the client wants attached to this data item. (defaults to: None)\n
+        :param measurements: the set of custom measurements the client wants to attach to this data item. (defaults to: None)
+        """
+        # https://docs.microsoft.com/en-us/azure/application-insights/application-insights-data-model-dependency-telemetry
+        data = channel.contracts.RemoteDependencyData()
+        data.id = str(uuid.uuid4())
+        data.success = success
+        data.name = name
+        data.type = type
+        data.target = target
+        data.duration = ms_to_duration(duration)
+        data.target = target
+        data.data = command
+        data.success = success
+        data.result_code = result_code
+
+        if properties:
+            data.properties = properties
+        if measurements:
+            data.measurements = measurements
+
+        self._channel.write(data, self._context)
+
     def track_request(self, name, url, success, start_time=None, duration=None, response_code=None, http_method=None, properties=None, measurements=None):
         """Sends a single request that was captured for the application.
 
@@ -203,18 +240,7 @@ class TelemetryClient(object):
         data.id = str(uuid.uuid4())
         data.name = name
         data.start_time = start_time or datetime.datetime.utcnow().isoformat() + 'Z'
-
-        local_duration = duration or 0
-        duration_parts = []
-        for multiplier in [1000, 60, 60, 24]:
-            duration_parts.append(local_duration % multiplier)
-            local_duration //= multiplier
-
-        duration_parts.reverse()
-        data.duration = '%02d:%02d:%02d.%03d' % tuple(duration_parts)
-        if local_duration:
-            data.duration = '%d.%s' % (local_duration, data.duration)
-
+        data.duration = ms_to_duration(duration)
         data.response_code = response_code or '200'
         data.success = success
         data.http_method = http_method or 'GET'
