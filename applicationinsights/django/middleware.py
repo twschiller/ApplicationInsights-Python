@@ -1,4 +1,4 @@
-
+import threading
 import datetime
 import inspect
 import sys
@@ -17,6 +17,14 @@ if sys.version_info >= (3, 3):
     TIME_FUNC = time.monotonic
 else:
     TIME_FUNC = time.time
+
+
+_thread_local = threading.local()
+
+
+def get_dependency_tc():
+    return getattr(_thread_local, 'appinsights_client', None)
+
 
 class ApplicationInsightsMiddleware(object):
     """This class is a Django middleware that automatically enables request and exception telemetry.  Django versions
@@ -123,7 +131,11 @@ class ApplicationInsightsMiddleware(object):
         data.url = request.build_absolute_uri()
         data.name = "%s %s" % (request.method, request.path)
         context.operation.name = data.name
+
+        # the id of the server request
         context.operation.id = data.id
+        # the id of the dependency that generated the request
+        context.operation.parent_id = request.META.get('Request-Id', data.id)
         context.location.ip = request.META.get('REMOTE_ADDR', '')
         context.user.user_agent = request.META.get('HTTP_USER_AGENT', '')
 
@@ -133,6 +145,10 @@ class ApplicationInsightsMiddleware(object):
         # User
         if request.user is not None and not request.user.is_anonymous and request.user.is_authenticated:
             context.user.auth_user_id = request.user.get_username()
+
+        child = applicationinsights.TelemetryClient(self._client.context.instrumentation_key, self._client.channel)
+        child.context.operation.parent_id = data.id
+        _thread_local.appinsights_client = child
 
         # Run and time the request
         addon.start_stopwatch()
@@ -148,6 +164,8 @@ class ApplicationInsightsMiddleware(object):
 
         data = addon.request
         context = addon.context
+
+        _thread_local.appinsights_client = None
 
         # Fill in data from the response
         data.duration = addon.measure_duration()
@@ -195,6 +213,8 @@ class ApplicationInsightsMiddleware(object):
         return None
 
     def process_exception(self, request, exception):
+        _thread_local.appinsights_client = None
+
         if not self._settings.log_exceptions:
             return None
 
@@ -220,6 +240,7 @@ class ApplicationInsightsMiddleware(object):
             data.properties['template_name'] = response.template_name
 
         return response
+
 
 class RequestAddon(object):
     def __init__(self, client):

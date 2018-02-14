@@ -190,19 +190,21 @@ class TelemetryClient(object):
     def track_dependency(self, name, command, type=None, duration=None, target=None, success=None, result_code=None, properties=None, measurements=None):
         """Sends information about a single dependency.
 
-        Dependency ID will be a random UUID4. For dependency tracking to work properly, the operation_Id and
-        operation_parentId should be set in the telemetry context (cf. https://docs.microsoft.com/en-us/azure/application-insights/application-insights-correlation)
+        Dependency ID will be a random UUID4. For dependency tracking to work properly, the operation.rootId and
+        operation.parentId should be set in the telemetry context (cf. https://docs.microsoft.com/en-us/azure/application-insights/application-insights-correlation)
+
+        See https://docs.microsoft.com/en-us/azure/application-insights/application-insights-data-model-dependency-telemetry
 
         :param name: Name of the command initiated with this dependency call. Low cardinality value. Examples are stored procedure name and URL path template.
         :param command: Command initiated by this dependency call. Examples are SQL statement and HTTP URL with all query parameters.
         :param type: Dependency type name. Low cardinality value for logical grouping of dependencies and interpretation of other fields like commandName and resultCode. Examples are SQL, Azure table, and HTTP.
         :param duration: Request duration in ms
+        :param target: Target site of a dependency call. Examples are server name, host address.
         :param success: Indication of successful or unsuccessful call.
         :param result_code: Result code of a dependency call. Examples are SQL error code and HTTP status code.
         :param properties: the set of custom properties the client wants attached to this data item. (defaults to: None)\n
         :param measurements: the set of custom measurements the client wants to attach to this data item. (defaults to: None)
         """
-        # https://docs.microsoft.com/en-us/azure/application-insights/application-insights-data-model-dependency-telemetry
         data = channel.contracts.RemoteDependencyData()
         data.id = str(uuid.uuid4())
         data.success = success
@@ -210,7 +212,6 @@ class TelemetryClient(object):
         data.type = type
         data.target = target
         data.duration = ms_to_duration(duration)
-        data.target = target
         data.data = command
         data.success = success
         data.result_code = result_code
